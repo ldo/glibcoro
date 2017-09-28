@@ -22,18 +22,7 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
 
     def __init__(self) :
         self._gloop = GLib.MainLoop()
-        self._callable = []
-        self._stepping = False
     #end __init__
-
-    def _post(self) :
-        # queues an execution of the _step() method as a GLib idle task, if there
-        # is something for it to do.
-        if not self._stepping and len(self._callable) != 0 :
-            self._stepping = True
-            GLib.idle_add(self._step, None)
-        #end if
-    #end _post
 
     def run_forever(self) :
         self._gloop.run()
@@ -50,32 +39,6 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
         self.create_task(awaitit())
         self.run_forever()
     #end run_until_complete
-
-    def _step(self, _) :
-        # runs an iteration of any pending tasks. Intended to be queued as
-        # a GLib idle action.
-        callable = self._callable
-        sys.stderr.write("stepping: %d callables\n" % len(callable)) # debug
-        self._callable = [] # anything added here will be processed next round
-        while True :
-            try :
-                self.cur = callable.pop(0)
-            except IndexError :
-                break
-            #end try
-            sys.stderr.write("run callable %s\n" % repr(self.cur)) # debug
-            self.cur._run()
-        #end while
-        self.cur = None
-        self._stepping = len(self._callable) != 0
-        if self._stepping : # debug
-            sys.stderr.write("will step again\n")
-        else :
-            sys.stderr.write("stepping done for now\n")
-        #end if
-        return \
-            self._stepping
-    #end _step
 
     def stop(self) :
         self._gloop.quit()
@@ -120,8 +83,7 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
     #begin call_soon
         sys.stderr.write("call_soon %s(%s)\n" % (repr(callback), repr(args))) # debug
         hdl = asyncio.Handle(callback, args, self)
-        self._callable.append(hdl)
-        self._post()
+        GLib.idle_add(doit, hdl)
         return \
             hdl
     #end call_soon
