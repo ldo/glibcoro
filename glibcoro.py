@@ -68,6 +68,7 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
     #end close
 
     def _timer_handle_cancelled(self, handle) :
+        # called from asyncio.TimerHandle.cancel()
         sys.stderr.write("cancelling timer %s\n" % (repr(handle,))) # debug
     #end _timer_handle_cancelled
 
