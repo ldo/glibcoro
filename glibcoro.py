@@ -22,9 +22,11 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
 
     def __init__(self) :
         self._gloop = GLib.MainLoop()
+        self._closed = False
     #end __init__
 
     def run_forever(self) :
+        self._check_closed()
         self._gloop.run()
     #end run_forever
 
@@ -36,6 +38,7 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
         #end awaitit
 
     #begin run_until_complete
+        self._check_closed()
         self.create_task(awaitit())
         self.run_forever()
     #end run_until_complete
@@ -49,12 +52,19 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
             self._gloop.is_running()
     #end is_running
 
+    def _check_closed(self) :
+        if self._closed :
+            raise asyncio.InvalidStateError("event loop is closed")
+        #end if
+    #end _check_closed
+
     def is_closed(self) :
-        TBD
+        return \
+            self._closed
     #end is_closed
 
     def close(self) :
-        TBD
+        self._closed = True
     #end close
 
     def _timer_handle_cancelled(self, handle) :
@@ -82,6 +92,7 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
 
     #begin call_soon
         sys.stderr.write("call_soon %s(%s)\n" % (repr(callback), repr(args))) # debug
+        self._check_closed()
         hdl = asyncio.Handle(callback, args, self)
         GLib.idle_add(doit, hdl)
         return \
@@ -118,7 +129,7 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
         #end doit
 
     #begin _call_timed_common
-        hdl = asyncio.TimerHandle(when, callback, args, self) # TBD should be TimerHandle
+        hdl = asyncio.TimerHandle(when, callback, args, self)
         GLib.timeout_add(max(round((when - self.time()) * 1000), 0), doit, hdl)
         return \
             hdl
@@ -126,12 +137,14 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
 
     def call_later(self, delay, callback, *args) :
         sys.stderr.write("call_later %s(%s) after %.3fs\n" % (repr(callback), repr(args), delay)) # debug
+        self._check_closed()
         return \
             self._call_timed_common(delay + self.time(), callback, args)
     #end call_later
 
     def call_at(self, when, callback, *args) :
         sys.stderr.write("call_at %s(%s) after %.3fs\n" % (repr(callback), repr(args), when - self.time())) # debug
+        self._check_closed()
         return \
             self._call_timed_common(when, callback, args)
     #end call_at
@@ -149,6 +162,7 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
     #end create_future
 
     def create_task(self, coro) :
+        self._check_closed()
         return \
             asyncio.Task(coro)
               # will call my call_soon routine to schedule itself
