@@ -38,13 +38,15 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
             "_closed",
             "_reader_sources",
             "_writer_sources",
+            "_signal_sources",
         )
 
     def __init__(self) :
         self._gloop = GLib.MainLoop()
         self._closed = False
-        self._reader_sources = {}
-        self._writer_sources = {}
+        self._reader_sources = {} # indexed by fileno
+        self._writer_sources = {} # indexed by fileno
+        self._signal_sources = {} # indexed by signum
     #end __init__
 
     def run_forever(self) :
@@ -254,7 +256,33 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
         #end  if
     #end remove_writer
 
-    # TODO: sockets, signals
+    # TODO: sockets
+
+    def add_signal_handler(self, signum, callback, *args) :
+
+        def doit(_1, _2) : # not sure what the args are
+            callback(*args)
+            return \
+                True # keep triggering
+        #end doit
+
+    #begin add_signal_handler
+        if signum not in self._signal_sources :
+            self._signal_sources[signum] = []
+        #end if
+        source_nr = GLib.unix_signal_add(0, signum, doit, None, None)
+        self._signal_sources[signum].append(source_nr)
+    #end add_signal_handler
+
+    def remove_signal_handler(self, signum) :
+        if signum in self._signal_sources :
+            for source_nr in self._signal_sources[signum] :
+                GLib.source_remove(source_nr)
+            #end for
+            del self._signal_sources[signum]
+        #end if
+    #end remove_signal_handler
+
     # TODO: task factory, exception handlers, debug flag
 
     def get_debug(self) :
