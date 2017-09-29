@@ -186,6 +186,24 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
 
     # <https://developer.gnome.org/glib/stable/glib-UNIX-specific-utilities-and-integration.html>
 
+    def _add_source(self, attr, key, source_nr) :
+        sources = getattr(self, attr)
+        if key not in sources :
+            sources[key] = []
+        #end if
+        sources[key].append(source_nr)
+    #end _add_source
+
+    def _remove_sources(self, attr, key) :
+        sources = getattr(self, attr)
+        if key in sources :
+            for source_nr in sources[key] :
+                GLib.source_remove(source_nr)
+            #end for
+            del sources[key]
+        #end if
+    #end _remove_sources
+
     def add_reader(self, fd, callback, *args) :
 
         def doit(_1, _2, _3, _4) : # not sure what the args are
@@ -196,29 +214,24 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
 
     #begin add_reader
         fileno = _fd_fileno(fd)
-        if fileno not in self._reader_sources :
-            self._reader_sources[fileno] = []
-        #end if
-        source_nr = GLib.unix_fd_add_full \
+        self._add_source \
           (
-            0,
-            fileno,
-            GLib.IOCondition.IN | GLib.IOCondition.PRI,
-            doit,
-            None,
-            None
+            attr = "_reader_sources",
+            key = fileno,
+            source_nr = GLib.unix_fd_add_full
+              (
+                0,
+                fileno,
+                GLib.IOCondition.IN | GLib.IOCondition.PRI,
+                doit,
+                None,
+                None
+              )
           )
-        self._reader_sources[fileno].append(source_nr)
     #end add_reader
 
     def remove_reader(self, fd) :
-        fileno = _fd_fileno(fd)
-        if fileno in self._reader_sources :
-            for source_nr in self._reader_sources[fileno] :
-                GLib.source_remove(source_nr)
-            #end for
-            del self._reader_sources[fileno]
-        #end  if
+        self._remove_sources("_reader_sources", _fd_fileno(fd))
     #end remove_reader
 
     def add_writer(self, fd, callback, *args) :
@@ -231,29 +244,24 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
 
     #begin add_writer
         fileno = _fd_fileno(fd)
-        if fileno not in self._writer_sources :
-            self._writer_sources[fileno] = []
-        #end if
-        source_nr = GLib.unix_fd_add_full \
+        self._add_source \
           (
-            0,
-            fileno,
-            GLib.IOCondition.OUT | GLib.IOCondition.PRI,
-            doit,
-            None,
-            None
+            attr = "_writer_sources",
+            key = fileno,
+            source_nr = GLib.unix_fd_add_full
+              (
+                0,
+                fileno,
+                GLib.IOCondition.OUT | GLib.IOCondition.PRI,
+                doit,
+                None,
+                None
+              )
           )
-        self._writer_sources[fileno].append(source_nr)
     #end add_writer
 
     def remove_writer(self, fd) :
-        fileno = _fd_fileno(fd)
-        if fileno in self._writer_sources :
-            for source_nr in self._writer_sources[fileno] :
-                GLib.source_remove(source_nr)
-            #end for
-            del self._writer_sources[fileno]
-        #end  if
+        self._remove_sources("_writer_sources", _fd_fileno(fd))
     #end remove_writer
 
     # TODO: sockets
@@ -267,20 +275,16 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
         #end doit
 
     #begin add_signal_handler
-        if signum not in self._signal_sources :
-            self._signal_sources[signum] = []
-        #end if
-        source_nr = GLib.unix_signal_add(0, signum, doit, None, None)
-        self._signal_sources[signum].append(source_nr)
+        self._add_source \
+          (
+            attr = "_signal_sources",
+            key = signum,
+            source_nr = GLib.unix_signal_add(0, signum, doit, None, None)
+          )
     #end add_signal_handler
 
     def remove_signal_handler(self, signum) :
-        if signum in self._signal_sources :
-            for source_nr in self._signal_sources[signum] :
-                GLib.source_remove(source_nr)
-            #end for
-            del self._signal_sources[signum]
-        #end if
+        self._remove_sources("_signal_sources", signum)
     #end remove_signal_handler
 
     # TODO: task factory, exception handlers, debug flag
