@@ -128,18 +128,8 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
     def _call_timed_common(self, when, callback, args) :
 
         def doit(hdl) :
-            exc = None
-            result = None
-            if False :
-                try :
-                    result = callback(*args)
-                except Exception as excp :
-                    exc = excp
-                #end try
-            else :
-                if not hdl._cancelled :
-                    hdl._run()
-                #end if
+            if not hdl._cancelled :
+                hdl._run()
             #end if
             return \
                 False # always one-shot
