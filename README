@@ -1,0 +1,19 @@
+glibcoro is an attempt to make the GLib/GTK event loop compatible with
+Python’s [asyncio](https://docs.python.org/3/library/asyncio.html)
+framework. Since the latter is a standard part of the language, code
+written to work with it has the potential to become “event-loop
+agnostic”, which means it should be possible to have it work unchanged
+with other event-loop frameworks, like GLib/GTK.
+
+There are already so many event-loop frameworks--every GUI toolkit has
+one! So why did the Python developers create yet another one? Because
+Python 3.5 introduces *coroutines*, which make it much simpler to
+write a concurrent task as a single linear block of code, instead of
+having to break it up into a chain of separate callbacks. We already
+have threading for concurrently running multiple execution contexts,
+but that is notoriously prone to bugs. Because coroutines have to
+explicitly yield control, the potential for race conditions is much
+reduced.
+
+Lawrence D'Oliveiro <ldo@geek-central.gen.nz>
+2017 September 30
