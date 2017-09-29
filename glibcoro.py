@@ -28,6 +28,28 @@ def _fd_fileno(fd) :
         fileno
 #end _fd_fileno
 
+class TimerHandle(asyncio.TimerHandle) :
+    "need to wrap asyncio.TimerHandle with extra info to correctly handle calls" \
+    " to GLibEventLoop._timer_handle_cancelled."
+
+    __slots__ = \
+        (
+            "_glib_source",
+            "_triggered",
+        )
+
+    def __init__(self, when, callback, args, loop) :
+        super().__init__(when, callback, args, loop)
+        self._glib_source = None # to begin with
+    #end __init__
+
+    def _run(self) :
+        self._triggered = True
+        super()._run()
+    #end _run
+
+#end TimerHandle
+
 class GLibEventLoop(asyncio.AbstractEventLoop) :
 
     # <https://developer.gnome.org/glib/stable/glib-The-Main-Event-Loop.html>
@@ -96,8 +118,10 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
 
     def _timer_handle_cancelled(self, handle) :
         # called from asyncio.TimerHandle.cancel()
-        # sys.stderr.write("cancelling timer %s\n" % (repr(handle,))) # debug
-        pass # I don’t really have anything to do
+        # sys.stderr.write("cancelling timer %s, one of mine %s, triggered %s\n" % (repr(handle), hasattr(handle, "_glib_source"), getattr(handle, "_triggered", None))) # debug
+        if not handle._triggered :
+            GLib.source_remove(handle._glib_source)
+        #end if
     #end _timer_handle_cancelled
 
     def call_exception_handler(self, context) :
@@ -137,8 +161,8 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
 
     #begin _call_timed_common
         self._check_closed()
-        hdl = asyncio.TimerHandle(when, callback, args, self)
-        GLib.timeout_add(max(round((when - self.time()) * 1000), 0), doit, hdl)
+        hdl = TimerHandle(when, callback, args, self)
+        hdl._glib_source = GLib.timeout_add(max(round((when - self.time()) * 1000), 0), doit, hdl)
         return \
             hdl
     #end _call_timed_common
