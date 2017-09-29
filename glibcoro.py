@@ -16,13 +16,35 @@ from gi.repository import \
 
 # TODO: handle threading?
 
+def _fd_fileno(fd) :
+    if hasattr(fd, "fileno") :
+        fileno = fd.fileno()
+    elif isinstance(fd, int) :
+        fileno = fd
+    else :
+        raise TypeError("fd does not have a fileno")
+    #end if
+    return \
+        fileno
+#end _fd_fileno
+
 class GLibEventLoop(asyncio.AbstractEventLoop) :
 
     # <https://developer.gnome.org/glib/stable/glib-The-Main-Event-Loop.html>
 
+    __slots__ = \
+        (
+            "_gloop",
+            "_closed",
+            "_reader_sources",
+            "_writer_sources",
+        )
+
     def __init__(self) :
         self._gloop = GLib.MainLoop()
         self._closed = False
+        self._reader_sources = {}
+        self._writer_sources = {}
     #end __init__
 
     def run_forever(self) :
@@ -159,7 +181,80 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
     #end create_task
 
     # TODO: threads, executor, network, pipes and subprocesses
-    # TODO: readers, writers, sockets, signals
+
+    # <https://developer.gnome.org/glib/stable/glib-UNIX-specific-utilities-and-integration.html>
+
+    def add_reader(self, fd, callback, *args) :
+
+        def doit(_1, _2, _3, _4) : # not sure what the args are
+            callback(*args)
+            return \
+                True # keep watching
+        #end doit
+
+    #begin add_reader
+        fileno = _fd_fileno(fd)
+        if fileno not in self._reader_sources :
+            self._reader_sources[fileno] = []
+        #end if
+        source_nr = GLib.unix_fd_add_full \
+          (
+            0,
+            fileno,
+            GLib.IOCondition.IN | GLib.IOCondition.PRI,
+            doit,
+            None,
+            None
+          )
+        self._reader_sources[fileno].append(source_nr)
+    #end add_reader
+
+    def remove_reader(self, fd) :
+        fileno = _fd_fileno(fd)
+        if fileno in self._reader_sources :
+            for source_nr in self._reader_sources[fileno] :
+                GLib.source_remove(source_nr)
+            #end for
+            del self._reader_sources[fileno]
+        #end  if
+    #end remove_reader
+
+    def add_writer(self, fd, callback, *args) :
+
+        def doit(_1, _2, _3, _4) : # not sure what the args are
+            callback(*args)
+            return \
+                True # keep watching
+        #end doit
+
+    #begin add_writer
+        fileno = _fd_fileno(fd)
+        if fileno not in self._writer_sources :
+            self._writer_sources[fileno] = []
+        #end if
+        source_nr = GLib.unix_fd_add_full \
+          (
+            0,
+            fileno,
+            GLib.IOCondition.OUT | GLib.IOCondition.PRI,
+            doit,
+            None,
+            None
+          )
+        self._writer_sources[fileno].append(source_nr)
+    #end add_writer
+
+    def remove_writer(self, fd) :
+        fileno = _fd_fileno(fd)
+        if fileno in self._writer_sources :
+            for source_nr in self._writer_sources[fileno] :
+                GLib.source_remove(source_nr)
+            #end for
+            del self._writer_sources[fileno]
+        #end  if
+    #end remove_writer
+
+    # TODO: sockets, signals
     # TODO: task factory, exception handlers, debug flag
 
     def get_debug(self) :
