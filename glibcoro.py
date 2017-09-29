@@ -146,6 +146,7 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
         #end doit
 
     #begin _call_timed_common
+        self._check_closed()
         hdl = asyncio.TimerHandle(when, callback, args, self)
         GLib.timeout_add(max(round((when - self.time()) * 1000), 0), doit, hdl)
         return \
@@ -153,13 +154,11 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
     #end _call_timed_common
 
     def call_later(self, delay, callback, *args) :
-        self._check_closed()
         return \
             self._call_timed_common(delay + self.time(), callback, args)
     #end call_later
 
     def call_at(self, when, callback, *args) :
-        self._check_closed()
         return \
             self._call_timed_common(when, callback, args)
     #end call_at
