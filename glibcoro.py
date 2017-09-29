@@ -64,12 +64,16 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
     #end is_closed
 
     def close(self) :
+        if self.is_running() :
+            raise asyncio.InvalidStateError("event loop cannot be closed while running")
+        #end if
         self._closed = True
     #end close
 
     def _timer_handle_cancelled(self, handle) :
         # called from asyncio.TimerHandle.cancel()
-        sys.stderr.write("cancelling timer %s\n" % (repr(handle,))) # debug
+        # sys.stderr.write("cancelling timer %s\n" % (repr(handle,))) # debug
+        pass # I don’t really have anything to do
     #end _timer_handle_cancelled
 
     def call_exception_handler(self, context) :
@@ -82,17 +86,14 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
     def call_soon(self, callback, *args) :
 
         def doit(hdl) :
-            sys.stderr.write("call_soon_doing, hdl = %s\n" % (hdl,)) # debug
             if not hdl._cancelled :
                 hdl._run()
             #end if
-            sys.stderr.write("call_soon hdl %s done\n" % (hdl,)) # debug
             return \
                 False # always one-shot
         #end doit
 
     #begin call_soon
-        sys.stderr.write("call_soon %s(%s)\n" % (repr(callback), repr(args))) # debug
         self._check_closed()
         hdl = asyncio.Handle(callback, args, self)
         GLib.idle_add(doit, hdl)
@@ -103,7 +104,6 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
     def _call_timed_common(self, when, callback, args) :
 
         def doit(hdl) :
-            sys.stderr.write("call_doing, hdl = %s\n" % (repr(hdl),),) # debug
             exc = None
             result = None
             if False :
@@ -117,14 +117,6 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
                     hdl._run()
                 #end if
             #end if
-            if False : # debug -- future is set done by asyncio?
-                if exc != None :
-                    call_done.set_exception(excp)
-                else :
-                    call_done.set_result(result)
-                #end if
-            #end if
-            sys.stderr.write("call_done, result = %s, exc = %s\n" % (repr(result), repr(exc))) # debug
             return \
                 False # always one-shot
         #end doit
@@ -137,14 +129,12 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
     #end _call_timed_common
 
     def call_later(self, delay, callback, *args) :
-        sys.stderr.write("call_later %s(%s) after %.3fs\n" % (repr(callback), repr(args), delay)) # debug
         self._check_closed()
         return \
             self._call_timed_common(delay + self.time(), callback, args)
     #end call_later
 
     def call_at(self, when, callback, *args) :
-        sys.stderr.write("call_at %s(%s) after %.3fs\n" % (repr(callback), repr(args), when - self.time())) # debug
         self._check_closed()
         return \
             self._call_timed_common(when, callback, args)
@@ -157,7 +147,6 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
     #end time
 
     def create_future(self) :
-        sys.stderr.write("create_future\n") # debug
         return \
             asyncio.Future(loop = self)
     #end create_future
