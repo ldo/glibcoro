@@ -40,6 +40,7 @@ class TimerHandle(asyncio.TimerHandle) :
 
     def __init__(self, when, callback, args, loop) :
         super().__init__(when, callback, args, loop)
+        self._triggered = False
         self._glib_source = None # to begin with
     #end __init__
 
