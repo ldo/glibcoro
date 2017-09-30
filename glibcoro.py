@@ -79,8 +79,11 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
 
     def run_until_complete(self, future) :
 
+        result = None
+
         async def awaitit() :
-            await future
+            nonlocal result
+            result = await future
             self.stop()
         #end awaitit
 
@@ -88,6 +91,8 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
         self._check_closed()
         self.create_task(awaitit())
         self.run_forever()
+        return \
+            result
     #end run_until_complete
 
     def stop(self) :
