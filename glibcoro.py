@@ -7,6 +7,7 @@
 #-
 
 import sys
+import traceback
 import time
 import types
 import asyncio
@@ -83,7 +84,11 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
 
         async def awaitit() :
             nonlocal result
-            result = await future
+            try :
+                result = await future
+            except Exception as exc :
+                traceback.print_exc()
+            #end try
             self.stop()
         #end awaitit
 
