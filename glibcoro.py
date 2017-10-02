@@ -136,8 +136,21 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
     #end _timer_handle_cancelled
 
     def call_exception_handler(self, context) :
-        # TBD
-        sys.stderr.write("call_exception_handler: %s\n " % repr(context))
+        # sys.stderr.write("call_exception_handler: %s\n" % repr(context)) # debug
+        # roughly modelled on asyncio.BaseEventLoop.default_exception_handler
+        if "message" in context :
+            sys.stderr.write(context["message"])
+            sys.stderr.write("\n")
+        #end if
+        for key in sorted(context) :
+            if key not in ("exception", "message") :
+                sys.stderr.write("%s: %s\n" % (key, context[key]))
+            #end if
+        #end for
+        if "exception" in context :
+            exc = context["exception"]
+            traceback.print_exception(type(exc), exc, exc.__traceback__)
+        #end if
     #end call_exception_handler
 
     # TODO: shutdown_asyncgens?
