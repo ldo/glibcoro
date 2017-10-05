@@ -9,13 +9,12 @@
 import sys
 import traceback
 import time
+import threading
 import types
 import asyncio
 import gi
 from gi.repository import \
     GLib
-
-# TODO: handle threading?
 
 def _fd_fileno(fd) :
     if hasattr(fd, "fileno") :
@@ -338,6 +337,12 @@ _running_loop = None
 class GLibEventLoopPolicy(asyncio.AbstractEventLoopPolicy) :
 
     def get_event_loop(self) :
+        if threading.current_thread() is not threading.main_thread() :
+            raise RuntimeError \
+              (
+                "use on other than main thread is not currently supported"
+              )
+        #end if
         global _running_loop
         if _running_loop == None :
             _running_loop = self.new_event_loop()
