@@ -168,6 +168,7 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
         self._check_closed()
         hdl = asyncio.Handle(callback, args, self)
         GLib.idle_add(doit, hdl)
+        self = None # avoid circular references
         return \
             hdl
     #end call_soon
@@ -186,6 +187,7 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
         self._check_closed()
         hdl = TimerHandle(when, callback, args, self)
         hdl._glib_source = GLib.timeout_add(max(round((when - self.time()) * 1000), 0), doit, hdl)
+        self = None # avoid circular references
         return \
             hdl
     #end _call_timed_common
@@ -264,6 +266,7 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
                 None
               )
           )
+        self = None # avoid circular references
     #end add_reader
 
     def remove_reader(self, fd) :
@@ -294,6 +297,7 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
                 None
               )
           )
+        self = None # avoid circular references
     #end add_writer
 
     def remove_writer(self, fd) :
@@ -317,6 +321,7 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
             key = signum,
             source_nr = GLib.unix_signal_add(0, signum, doit, None, None)
           )
+        self = None # avoid circular references
     #end add_signal_handler
 
     def remove_signal_handler(self, signum) :
