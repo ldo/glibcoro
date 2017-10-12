@@ -59,6 +59,7 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
         (
             "_gloop",
             "_closed",
+            "_exception_handler",
             "_reader_sources",
             "_writer_sources",
             "_signal_sources",
@@ -67,6 +68,7 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
     def __init__(self) :
         self._gloop = GLib.MainLoop()
         self._closed = False
+        self._exception_handler = None
         self._reader_sources = {} # indexed by fileno
         self._writer_sources = {} # indexed by fileno
         self._signal_sources = {} # indexed by signum
@@ -134,8 +136,25 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
         #end if
     #end _timer_handle_cancelled
 
+    def get_exception_handler(self) :
+        return \
+            self._exception_handler
+    #end get_exception_handler
+
+    def set_exception_handler(self, handler) :
+        self._exception_handler = handler
+    #end set_exception_handler
+
     def call_exception_handler(self, context) :
-        # sys.stderr.write("call_exception_handler: %s\n" % repr(context)) # debug
+        handler = self.get_exception_handler()
+        if handler == None :
+            handler = self.default_exception_handler
+        #end if
+        handler(context)
+    #end call_exception_handler
+
+    def default_exception_handler(self, context) :
+        # sys.stderr.write("default_exception_handler: %s\n" % repr(context)) # debug
         # roughly modelled on asyncio.BaseEventLoop.default_exception_handler
         if "message" in context :
             sys.stderr.write(context["message"])
@@ -150,7 +169,7 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
             exc = context["exception"]
             traceback.print_exception(type(exc), exc, exc.__traceback__)
         #end if
-    #end call_exception_handler
+    #end default_exception_handler
 
     # TODO: shutdown_asyncgens?
 
@@ -328,7 +347,7 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
         self._remove_sources("_signal_sources", signum)
     #end remove_signal_handler
 
-    # TODO: task factory, exception handlers, debug flag
+    # TODO: task factory, debug flag
 
     def get_debug(self) :
         return \

@@ -37,10 +37,10 @@ Implementation Status
 
 While coroutine execution and timed tasks are fully functional,
 `glibcoro` is not a complete replacement for `asyncio.BaseEventLoop`
-as yet. Missing functionality includes support for exception handling,
-asynchronous network connections, sockets and subprocess invocation,
-as well as multiple event loops on separate threads. Though I’m not
-sure I really want to support threading...
+as yet. Missing functionality includes support for asynchronous
+network connections, sockets and subprocess invocation, as well as
+multiple event loops on separate threads. Though I’m not sure I really
+want to support threading...
 
 
 Further Examples
@@ -52,4 +52,4 @@ my `glibcoro_examples` repo ([GitLab](https://gitlab.com/ldo/glibcoro_examples),
 
 
 Lawrence D'Oliveiro <ldo@geek-central.gen.nz>
-2017 September 30
+2017 October 12
