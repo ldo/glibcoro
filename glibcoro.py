@@ -142,6 +142,9 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
     #end get_exception_handler
 
     def set_exception_handler(self, handler) :
+        if handler != None and not callable(handler) :
+            raise TypeError("exception handler must be callable")
+        #end if
         self._exception_handler = handler
     #end set_exception_handler
 
