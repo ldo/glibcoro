@@ -59,6 +59,7 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
         (
             "_gloop",
             "_closed",
+            "_task_factory",
             "_exception_handler",
             "_reader_sources",
             "_writer_sources",
@@ -68,6 +69,7 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
     def __init__(self) :
         self._gloop = GLib.MainLoop()
         self._closed = False
+        self._task_factory = None
         self._exception_handler = None
         self._reader_sources = {} # indexed by fileno
         self._writer_sources = {} # indexed by fileno
@@ -237,10 +239,27 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
 
     def create_task(self, coro) :
         self._check_closed()
-        return \
-            asyncio.Task(coro)
+        if self._task_factory != None :
+            result = self._task_factory(self, coro)
+        else :
+            result = asyncio.Task(coro)
               # will call my call_soon routine to schedule itself
+        #end if
+        return \
+            result
     #end create_task
+
+    def get_task_factory(self) :
+        return \
+            self._task_factory
+    #end get_task_factory
+
+    def set_task_factory(self, factory) :
+        if factory != None and not callable(factory) :
+            raise TypeError("task factory must be callable")
+        #end if
+        self._task_factory = factory
+    #end set_task_factory
 
     # TODO: threads, executor, network, pipes and subprocesses
 
@@ -350,7 +369,7 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
         self._remove_sources("_signal_sources", signum)
     #end remove_signal_handler
 
-    # TODO: task factory, debug flag
+    # TODO: debug flag
 
     def get_debug(self) :
         return \
