@@ -1,9 +1,9 @@
-glibcoro is an attempt to make the GLib/GTK event loop compatible with
-Python’s [`asyncio`](https://docs.python.org/3/library/asyncio.html)
-framework. Since the latter is a standard part of the language, code
-written to work with it has the potential to become “event-loop
-agnostic”, which means it should be possible to have it work unchanged
-with other event-loop frameworks, like GLib/GTK.
+glibcoro makes the GLib/GTK event loop compatible with Python’s
+[`asyncio`](https://docs.python.org/3/library/asyncio.html) framework.
+Since the latter is a standard part of the language, code written to
+work with it has the potential to become “event-loop agnostic”, which
+means it should be possible to have it work unchanged with other
+event-loop frameworks, like GLib/GTK.
 
 There are already so many event-loop frameworks--every GUI toolkit has
 one! So why did the Python developers create yet another one? Because
@@ -35,12 +35,14 @@ by `asyncio`, they will be running under the GLib event loop.
 Implementation Status
 =====================
 
-While coroutine execution and timed tasks are fully functional,
-`glibcoro` is not a complete replacement for `asyncio.BaseEventLoop`
-as yet. Missing functionality includes support for asynchronous
-network connections, sockets and subprocess invocation, as well as
-multiple event loops on separate threads. Though I’m not sure I really
-want to support threading...
+`glibcoro` implements the main part of the functionality equivalent to
+`asyncio.BaseEventLoop`: including basic coroutine execution, timed
+tasks, and watching of file descriptors. Additional functionality
+mentioned in the Python documentation to do with asynchronous network
+connections, sockets and subprocess invocation seems to require other
+event loop classes, so I have not supported these. Also I do not
+handle multiple event loops on separate threads. Though I’m not sure I
+really want to support threading...
 
 
 Further Examples
@@ -52,4 +54,4 @@ my `glibcoro_examples` repo ([GitLab](https://gitlab.com/ldo/glibcoro_examples),
 
 
 Lawrence D'Oliveiro <ldo@geek-central.gen.nz>
-2017 October 12
+2017 October 31
