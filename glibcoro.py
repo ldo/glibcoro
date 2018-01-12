@@ -197,6 +197,8 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
             hdl
     #end call_soon
 
+    call_soon_threadsafe = call_soon # GLib is threadsafe
+
     def _call_timed_common(self, when, callback, args) :
 
         def doit(hdl) :
