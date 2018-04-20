@@ -403,6 +403,7 @@ class GLibEventLoopPolicy(asyncio.AbstractEventLoopPolicy) :
         if not isinstance(loop, GLibEventLoop) :
             raise TypeError("loop must be a GLibEventLoop")
         #end if
+        global _running_loop
         _running_loop = loop
     #end set_event_loop
 
