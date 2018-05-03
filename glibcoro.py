@@ -384,13 +384,19 @@ _running_loop = None
 
 class GLibEventLoopPolicy(asyncio.AbstractEventLoopPolicy) :
 
-    def get_event_loop(self) :
+    @staticmethod
+    def _check_is_main_thread() :
+        # prevent use with multiple threads.
         if threading.current_thread() is not threading.main_thread() :
             raise RuntimeError \
               (
                 "use on other than main thread is not currently supported"
               )
         #end if
+    #end _check_is_main_thread
+
+    def get_event_loop(self) :
+        self._check_is_main_thread()
         global _running_loop
         if _running_loop == None :
             _running_loop = self.new_event_loop()
@@ -400,6 +406,7 @@ class GLibEventLoopPolicy(asyncio.AbstractEventLoopPolicy) :
     #end get_event_loop
 
     def set_event_loop(self, loop) :
+        self._check_is_main_thread()
         if not isinstance(loop, GLibEventLoop) :
             raise TypeError("loop must be a GLibEventLoop")
         #end if
@@ -408,6 +415,7 @@ class GLibEventLoopPolicy(asyncio.AbstractEventLoopPolicy) :
     #end set_event_loop
 
     def new_event_loop(self) :
+        self._check_is_main_thread()
         return \
             GLibEventLoop()
     #end new_event_loop
