@@ -4,6 +4,9 @@
 # The goal of this project is to implement an interface to the GLib/GTK+
 # event loop as a subclass of asyncio.AbstractEventLoop, taking full
 # advantage of the coroutine feature available in Python 3.5 and later.
+#
+# Copyright 2017-2018 Lawrence D'Oliveiro <ldo@geek-central.gen.nz>.
+# Licensed under the GNU Lesser General Public License v2.1 or later.
 #-
 
 import sys
