@@ -383,9 +383,78 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
 
 #end GLibEventLoop
 
+class GLibChildWatcher(asyncio.AbstractChildWatcher) :
+    "watch for termination of child processes. Note that you need to" \
+    " spawn the processes with the GLib.SPAWN_DO_NOT_REAP_CHILD flag," \
+    " otherwise any handlers registered here for them will not be called."
+
+    # <https://developer.gnome.org/glib/stable/glib-Spawning-Processes.html>
+
+    __slots__ = ("_sources",)
+
+    def __init__(self) :
+        self._sources = {}
+    #end __init__
+
+    def add_child_handler(self, pid, callback, args) :
+        "registers a handler which will be invoked as" \
+        " callback(pid, returncode, *args) when the process with ID pid terminates."
+
+        def child_done(pid, status, self) :
+            del self._sources[pid]
+            callback(pid, status, *args)
+        #end child_done
+
+    #begin add_child_handler
+        if pid in self._sources :
+            self.remove_child_handler(pid)
+        #end if
+        self._sources[pid] = GLib.child_watch_add(pid, child_done, self)
+    #end add_child_handler
+
+    def remove_child_handler(self, pid) :
+        "removes any installed handler for the process with ID pid."
+        if pid in self._sources :
+            GLib.source_remove(self._sources[pid])
+            del self._sources[pid]
+        #end if
+    #end remove_child_handler
+
+    def attach_loop(self, loop) :
+        if loop != asyncio.get_event_loop() or not isinstance(loop, GLibEventLoop) :
+            raise TypeError("I only support attaching to default GLibEventLoop")
+        #end if
+    #end attach_loop
+
+    def close(self) :
+        pass
+    #end close
+
+    # asyncio.unix_events.FastChildWatcher uses context manager
+    # calls to keep track of terminations of processes not
+    # created by asyncio. Since I assume all process creations
+    # are done through GLib, I just implement these as no-ops.
+
+    def __enter__(self) :
+        return \
+            self
+    #end __enter__
+
+    def __exit__(self, exc_type, exc_value, traceback) :
+        pass
+    #end __exit__
+
+#end GLibChildWatcher
+
 _running_loop = None
 
 class GLibEventLoopPolicy(asyncio.AbstractEventLoopPolicy) :
+
+    __slots__ = ("_child_watcher",)
+
+    def __init__(self) :
+        self._child_watcher = None
+    #end __init__
 
     @staticmethod
     def _check_is_main_thread() :
@@ -423,7 +492,27 @@ class GLibEventLoopPolicy(asyncio.AbstractEventLoopPolicy) :
             GLibEventLoop()
     #end new_event_loop
 
-    # TODO: get/set_child_watcher
+    def get_child_watcher(self) :
+        if self._child_watcher == None :
+            self._child_watcher = GLibChildWatcher()
+            self._child_watcher.attach_loop(self.get_event_loop())
+        #end if
+        return \
+            self._child_watcher
+    #end get_child_watcher
+
+    def set_child_watcher(self, watcher) :
+        if not isinstance(watcher, GLibChildWatcher) :
+            raise TypeError("watcher is not a GLibChildWatcher")
+        #end if
+        if self._child_watcher != watcher :
+            if self._child_watcher != None :
+                self._child_watcher.close()
+            #end if
+            self._child_watcher = watcher
+            self._child_watcher.attach_loop(self.get_event_loop())
+        #end if
+    #end set_child_watcher
 
 #end GLibEventLoopPolicy
 
