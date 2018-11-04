@@ -13,7 +13,6 @@ import sys
 import traceback
 import time
 import threading
-import types
 import asyncio
 import gi
 from gi.repository import \
