@@ -180,7 +180,7 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
 
     # TODO: shutdown_asyncgens?
 
-    def call_soon(self, callback, *args) :
+    def call_soon(self, callback, *args, context = None) :
 
         def doit(hdl) :
             if not hdl._cancelled :
