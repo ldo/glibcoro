@@ -40,7 +40,7 @@ distutils.core.setup \
     description = "asyncio-compatible wrapper for GLib event loop, for Python 3.5 or later",
     author = "Lawrence D'Oliveiro",
     author_email = "ldo@geek-central.gen.nz",
-    url = "http://github.com/ldo/glibcoro",
+    url = "https://github.com/ldo/glibcoro",
     py_modules = ["glibcoro"],
     cmdclass =
         {
