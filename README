@@ -43,6 +43,12 @@ network connections, sockets and subprocess invocation, as well as
 multiple event loops on separate threads. Though I’m not sure I really
 want to support threading...
 
+By the way, when I started this project, I had no idea that
+[Gbulb](https://github.com/nhoad/gbulb) existed. That one
+is definitely a more advanced project, and even includes some
+measure of Windows support. And its maintainers show some
+deeper knowledge of GLib/GTK behaviour than I do.
+
 
 Further Examples
 ================
@@ -53,4 +59,4 @@ my `glibcoro_examples` repo ([GitLab](https://gitlab.com/ldo/glibcoro_examples),
 
 
 Lawrence D'Oliveiro <ldo@geek-central.gen.nz>
-2017 November 2
+2020 February 3
