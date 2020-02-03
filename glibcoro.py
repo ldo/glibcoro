@@ -69,7 +69,7 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
         )
 
     def __init__(self) :
-        self._gloop = GLib.MainLoop()
+        self._gloop = None
         self._closed = False
         self._task_factory = None
         self._exception_handler = None
@@ -80,7 +80,10 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
 
     def run_forever(self) :
         self._check_closed()
+        assert self._gloop == None, "loop already running"
+        self._gloop = GLib.MainLoop()
         self._gloop.run()
+        self._gloop = None
     #end run_forever
 
     def run_until_complete(self, future) :
@@ -106,12 +109,14 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
     #end run_until_complete
 
     def stop(self) :
-        self._gloop.quit()
+        if self._gloop != None :
+            self._gloop.quit()
+        #end if
     #end stop
 
     def is_running(self) :
         return \
-            self._gloop.is_running()
+            self._gloop != None and self._gloop.is_running()
     #end is_running
 
     def _check_closed(self) :
