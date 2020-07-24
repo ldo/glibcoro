@@ -5,7 +5,7 @@
 # event loop as a subclass of asyncio.AbstractEventLoop, taking full
 # advantage of the coroutine feature available in Python 3.5 and later.
 #
-# Copyright 2017-2018 Lawrence D'Oliveiro <ldo@geek-central.gen.nz>.
+# Copyright 2017-2020 Lawrence D'Oliveiro <ldo@geek-central.gen.nz>.
 # Licensed under the GNU Lesser General Public License v2.1 or later.
 #-
 
@@ -82,7 +82,10 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
         self._check_closed()
         assert self._gloop == None, "loop already running"
         self._gloop = GLib.MainLoop()
+        prev_loop = asyncio._get_running_loop()
+        asyncio._set_running_loop(self)
         self._gloop.run()
+        asyncio._set_running_loop(prev_loop)
         self._gloop = None
     #end run_forever
 
@@ -102,7 +105,7 @@ class GLibEventLoop(asyncio.AbstractEventLoop) :
 
     #begin run_until_complete
         self._check_closed()
-        self.create_task(awaitit())
+        task = self.create_task(awaitit()) # keep a strong ref
         self.run_forever()
         return \
             result
