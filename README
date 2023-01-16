@@ -1,4 +1,4 @@
-glibcoro makes the [GLib/GTK](https://developer.gnome.org/references)
+glibcoro makes the [GLib/GTK](https://developer-old.gnome.org/references)
 event loop compatible with Python’s
 [`asyncio`](https://docs.python.org/3/library/asyncio.html) framework.
 Since the latter is a standard part of the language, code written to
