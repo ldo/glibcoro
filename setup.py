@@ -41,7 +41,7 @@ setuptools.setup \
     description = "asyncio-compatible wrapper for GLib event loop, for Python 3.5 or later",
     author = "Lawrence D'Oliveiro",
     author_email = "ldo@geek-central.gen.nz",
-    url = "https://github.com/ldo/glibcoro",
+    url = "https://gitlab.com/ldo/glibcoro",
     py_modules = ["glibcoro"],
     cmdclass =
         {
